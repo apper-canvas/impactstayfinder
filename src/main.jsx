@@ -1,8 +1,9 @@
 import "./index.css";
+import "@/index.css";
 import React, { Suspense, lazy } from "react";
 import ReactDOM from "react-dom/client";
-import { RouterProvider, createBrowserRouter } from "react-router-dom";
-import App from "@/App";
+import { RouterProvider } from "react-router-dom";
+import { router } from "@/router";
 
 // Lazy load all page components
 const Home = lazy(() => import("@/components/pages/Home"));
@@ -12,7 +13,6 @@ const PropertyComparison = lazy(() => import("@/components/pages/PropertyCompari
 const Wishlist = lazy(() => import("@/components/pages/Wishlist"));
 const Help = lazy(() => import("@/components/pages/Help"));
 const NotFound = lazy(() => import("@/components/pages/NotFound"));
-
 // Suspense fallback component
 const SuspenseFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -95,15 +95,7 @@ const mainRoutes = [
 ];
 
 // Router configuration
-const routes = [
-  {
-    path: "/",
-    element: <App />,
-    children: [...mainRoutes]
-  }
-];
 
-export const router = createBrowserRouter(routes);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <RouterProvider router={router} />
