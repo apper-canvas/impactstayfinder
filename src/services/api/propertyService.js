@@ -11,10 +11,26 @@ class PropertyService {
     return [...this.properties];
   }
 
-  async getById(id) {
+async getById(id) {
     await new Promise(resolve => setTimeout(resolve, 200));
     const property = this.properties.find(p => p.Id === id);
-    return property ? { ...property } : null;
+    if (!property) return null;
+
+    // Get review data for this property
+    try {
+      const { reviewService } = await import('./reviewService.js');
+      const reviewData = await reviewService.getByPropertyId(id);
+      
+      return {
+        ...property,
+        rating: reviewData.averageRating || property.rating,
+        reviewCount: reviewData.totalCount || property.reviewCount
+      };
+    } catch (error) {
+      // Fallback to original property data if review service fails
+      console.warn('Failed to load review data:', error);
+      return { ...property };
+    }
   }
 
   async search(query) {
@@ -60,12 +76,14 @@ class PropertyService {
     return results;
   }
 
-  async create(propertyData) {
+async create(propertyData) {
     await new Promise(resolve => setTimeout(resolve, 300));
     const newId = Math.max(...this.properties.map(p => p.Id)) + 1;
     const newProperty = {
       Id: newId,
-      ...propertyData
+      ...propertyData,
+      rating: 0,
+      reviewCount: 0
     };
     this.properties.push(newProperty);
     return { ...newProperty };

@@ -7,6 +7,7 @@ import Loading from "@/components/ui/Loading";
 import Error from "@/components/ui/Error";
 import { propertyService } from "@/services/api/propertyService";
 import { wishlistService } from "@/services/api/wishlistService";
+import { reviewService } from "@/services/api/reviewService";
 import { toast } from "react-toastify";
 
 // Amenities Section Component
@@ -82,96 +83,327 @@ const HouseRulesSection = () => (
 );
 
 // Reviews Section Component
-const ReviewsSection = ({ rating, reviewCount }) => {
+const ReviewsSection = ({ propertyId, rating, reviewCount }) => {
+  const [reviews, setReviews] = useState([]);
   const [showAll, setShowAll] = useState(false);
-  
-  const mockReviews = [
-    {
-      id: 1,
-      name: "Sarah M.",
-      date: "December 2024",
-      rating: 5,
-      comment: "Amazing property with stunning views! The host was incredibly responsive and the location was perfect for exploring the city. Would definitely stay again."
-    },
-    {
-      id: 2,
-      name: "James L.",
-      date: "November 2024",
-      rating: 5,
-      comment: "Clean, comfortable, and exactly as described. Great amenities and the neighborhood felt very safe. Easy check-in process too."
-    },
-    {
-      id: 3,
-      name: "Maria K.",
-      date: "October 2024",
-      rating: 4,
-      comment: "Lovely place with great attention to detail. Minor issue with WiFi but host resolved it quickly. Overall excellent experience!"
-    },
-    {
-      id: 4,
-      name: "David R.",
-      date: "October 2024",
-      rating: 5,
-      comment: "Exceeded expectations! Beautiful space, perfect location, and the host provided excellent local recommendations. Highly recommend."
-    },
-    {
-      id: 5,
-      name: "Emma T.",
-      date: "September 2024",
-      rating: 4,
-      comment: "Great value for money. The apartment was spotless and had everything we needed. Would stay here again on our next visit."
-    },
-    {
-      id: 6,
-      name: "Alex P.",
-      date: "September 2024",
-      rating: 5,
-      comment: "Perfect for our weekend getaway. The photos don't do it justice - it's even better in person! Great communication from the host."
-    }
-  ];
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [reviewFormData, setReviewFormData] = useState({
+    rating: 0,
+    title: '',
+    comment: '',
+    userName: 'Guest User'
+  });
+  const [submittingReview, setSubmittingReview] = useState(false);
 
-  const displayReviews = showAll ? mockReviews : mockReviews.slice(0, 3);
+  // Load reviews for this property
+  const loadReviews = async () => {
+    try {
+      setReviewsLoading(true);
+      const reviewData = await reviewService.getByPropertyId(propertyId);
+      setReviews(reviewData.reviews);
+    } catch (error) {
+      console.error('Failed to load reviews:', error);
+      toast.error('Failed to load reviews');
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (propertyId) {
+      loadReviews();
+    }
+  }, [propertyId]);
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (reviewFormData.rating === 0) {
+      toast.warn('Please select a star rating');
+      return;
+    }
+    
+    if (reviewFormData.comment.trim().length < 10) {
+      toast.warn('Please write at least 10 characters for your review');
+      return;
+    }
+
+    try {
+      setSubmittingReview(true);
+      await reviewService.create({
+        propertyId: propertyId,
+        rating: reviewFormData.rating,
+        title: reviewFormData.title.trim(),
+        comment: reviewFormData.comment.trim(),
+        userName: reviewFormData.userName.trim() || 'Guest User'
+      });
+
+      toast.success('Review submitted successfully!');
+      
+      // Reset form
+      setReviewFormData({
+        rating: 0,
+        title: '',
+        comment: '',
+        userName: 'Guest User'
+      });
+      setShowReviewForm(false);
+      
+      // Reload reviews
+      await loadReviews();
+    } catch (error) {
+      console.error('Failed to submit review:', error);
+      toast.error(error.message || 'Failed to submit review');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const StarRating = ({ rating, onRatingChange, interactive = false }) => {
+    const [hoverRating, setHoverRating] = useState(0);
+    
+    return (
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type={interactive ? "button" : undefined}
+            disabled={!interactive}
+            className={`${interactive ? 'cursor-pointer hover:scale-110' : 'cursor-default'} transition-transform`}
+            onClick={() => interactive && onRatingChange && onRatingChange(star)}
+            onMouseEnter={() => interactive && setHoverRating(star)}
+            onMouseLeave={() => interactive && setHoverRating(0)}
+          >
+            <ApperIcon 
+              name="Star" 
+              size={interactive ? 20 : 12} 
+              className={`transition-colors ${
+                star <= (interactive ? (hoverRating || rating) : rating)
+                  ? 'text-accent fill-current' 
+                  : 'text-gray-300'
+              }`}
+            />
+          </button>
+        ))}
+        {interactive && rating > 0 && (
+          <span className="ml-2 text-sm text-gray-600">
+            {rating} star{rating !== 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
+    );
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long' 
+    });
+  };
+
+  const displayReviews = showAll ? reviews : reviews.slice(0, 3);
+
+  if (reviewsLoading) {
+    return (
+      <div className="pb-8 border-b border-gray-200">
+        <div className="flex items-center justify-center py-8">
+          <Loading type="reviews" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pb-8 border-b border-gray-200">
-      <div className="flex items-center gap-3 mb-6">
-        <ApperIcon name="Star" size={24} className="text-accent fill-current" />
-        <h2 className="text-2xl font-semibold text-gray-900">
-          {rating} · {reviewCount} reviews
-        </h2>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <ApperIcon name="Star" size={24} className="text-accent fill-current" />
+          <h2 className="text-2xl font-semibold text-gray-900">
+            {rating} · {reviewCount} review{reviewCount !== 1 ? 's' : ''}
+          </h2>
+        </div>
+        <button
+          onClick={() => setShowReviewForm(!showReviewForm)}
+          className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors flex items-center gap-2"
+        >
+          <ApperIcon name="Plus" size={16} />
+          Write a review
+        </button>
       </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {displayReviews.map((review) => (
-          <div key={review.id} className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center">
-                <span className="text-white font-semibold text-sm">
-                  {review.name.charAt(0)}
+
+      {/* Review Form */}
+      {showReviewForm && (
+        <div className="mb-8 p-6 bg-gray-50 rounded-lg border">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Write your review</h3>
+          <form onSubmit={handleReviewSubmit} className="space-y-4">
+            {/* Rating */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Your rating *
+              </label>
+              <StarRating
+                rating={reviewFormData.rating}
+                onRatingChange={(rating) => setReviewFormData(prev => ({ ...prev, rating }))}
+                interactive={true}
+              />
+            </div>
+
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Your name
+              </label>
+              <input
+                type="text"
+                value={reviewFormData.userName}
+                onChange={(e) => setReviewFormData(prev => ({ ...prev, userName: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                placeholder="Enter your name"
+              />
+            </div>
+
+            {/* Title */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Review title (optional)
+              </label>
+              <input
+                type="text"
+                value={reviewFormData.title}
+                onChange={(e) => setReviewFormData(prev => ({ ...prev, title: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                placeholder="Summarize your experience"
+                maxLength={100}
+              />
+            </div>
+
+            {/* Comment */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Your review *
+              </label>
+              <textarea
+                value={reviewFormData.comment}
+                onChange={(e) => setReviewFormData(prev => ({ ...prev, comment: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary h-24 resize-none"
+                placeholder="Tell others about your experience at this property"
+                maxLength={1000}
+                required
+              />
+              <div className="flex justify-between items-center mt-1">
+                <span className="text-xs text-gray-500">
+                  Minimum 10 characters
+                </span>
+                <span className="text-xs text-gray-500">
+                  {reviewFormData.comment.length}/1000
                 </span>
               </div>
-              <div>
-                <h4 className="font-semibold text-gray-900">{review.name}</h4>
-                <p className="text-sm text-gray-600">{review.date}</p>
-              </div>
-              <div className="ml-auto flex items-center gap-1">
-                {[...Array(review.rating)].map((_, i) => (
-                  <ApperIcon key={i} name="Star" size={12} className="text-accent fill-current" />
-                ))}
-              </div>
             </div>
-            <p className="text-gray-700 text-sm leading-relaxed">{review.comment}</p>
+
+            {/* Form Actions */}
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="submit"
+                disabled={submittingReview || reviewFormData.rating === 0 || reviewFormData.comment.trim().length < 10}
+                className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {submittingReview ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <ApperIcon name="Send" size={16} />
+                    Submit Review
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowReviewForm(false);
+                  setReviewFormData({
+                    rating: 0,
+                    title: '',
+                    comment: '',
+                    userName: 'Guest User'
+                  });
+                }}
+                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Reviews List */}
+      {reviews.length > 0 ? (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            {displayReviews.map((review) => (
+              <div key={review.Id} className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center overflow-hidden">
+                    {review.userAvatar ? (
+                      <img 
+                        src={review.userAvatar} 
+                        alt={review.userName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-white font-semibold text-sm">
+                        {review.userName.charAt(0)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-semibold text-gray-900">{review.userName}</h4>
+                      {review.verified && (
+                        <ApperIcon name="BadgeCheck" size={16} className="text-secondary" />
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600">{formatDate(review.date)}</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <StarRating rating={review.rating} />
+                  </div>
+                </div>
+                {review.title && (
+                  <h5 className="font-medium text-gray-900">{review.title}</h5>
+                )}
+                <p className="text-gray-700 text-sm leading-relaxed">{review.comment}</p>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      
-      {mockReviews.length > 3 && (
-        <button
-          onClick={() => setShowAll(!showAll)}
-          className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
-        >
-          {showAll ? 'Show less' : `Show all ${reviewCount} reviews`}
-        </button>
+          
+          {reviews.length > 3 && (
+            <button
+              onClick={() => setShowAll(!showAll)}
+              className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+            >
+              {showAll ? 'Show less' : `Show all ${reviewCount} reviews`}
+            </button>
+          )}
+        </>
+      ) : (
+        <div className="text-center py-8">
+          <ApperIcon name="MessageSquare" size={48} className="text-gray-400 mx-auto mb-3" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No reviews yet</h3>
+          <p className="text-gray-600 mb-4">Be the first to share your experience!</p>
+          <button
+            onClick={() => setShowReviewForm(true)}
+            className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Write the first review
+          </button>
+        </div>
       )}
     </div>
   );
@@ -179,15 +411,16 @@ const ReviewsSection = ({ rating, reviewCount }) => {
 const PropertyDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [property, setProperty] = useState(null);
+const [property, setProperty] = useState(null);
   const [similarProperties, setSimilarProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [reviewsKey, setReviewsKey] = useState(0); // Force reviews refresh
 
-  const loadProperty = async () => {
+const loadProperty = async () => {
     try {
       setLoading(true);
       setError("");
@@ -207,6 +440,9 @@ const PropertyDetail = () => {
         .filter(p => p.Id !== propertyData.Id && p.location.city === propertyData.location.city)
         .slice(0, 4);
       setSimilarProperties(similar);
+      
+      // Force reviews to refresh when property changes
+      setReviewsKey(prev => prev + 1);
     } catch (err) {
       setError("Failed to load property details. Please try again.");
       console.error("Error loading property:", err);
