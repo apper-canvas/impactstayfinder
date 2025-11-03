@@ -163,7 +163,7 @@ class ReviewService {
       Id: newId,
       propertyId: reviewData.propertyId,
       userId: reviewData.userId || 'anonymous',
-      userName: reviewData.userName || 'Anonymous User',
+userName: reviewData.userName,
       userAvatar: reviewData.userAvatar || '',
       rating: reviewData.rating,
       title: reviewData.title || '',
@@ -239,12 +239,12 @@ export const reviewService = new ReviewService();
 // Review Form Component
 
 function ReviewForm({ propertyId, onSubmit, onCancel, loading }) {
-  const [rating, setRating] = useState(0);
+const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [title, setTitle] = useState('');
   const [comment, setComment] = useState('');
+  const [userName, setUserName] = useState('');
   const [errors, setErrors] = useState({});
-
   const validateForm = () => {
     const newErrors = {};
     
@@ -264,7 +264,7 @@ function ReviewForm({ propertyId, onSubmit, onCancel, loading }) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -276,8 +276,8 @@ function ReviewForm({ propertyId, onSubmit, onCancel, loading }) {
       rating: rating,
       title: title.trim(),
       comment: comment.trim(),
-userId: 'current-user', // In real app, get from auth
-      userName: '', // Empty by default - user must enter name
+      userId: 'current-user', // In real app, get from auth
+      userName: userName.trim(),
       userAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face'
     };
 
@@ -332,10 +332,30 @@ userId: 'current-user', // In real app, get from auth
           </div>
           {errors.rating && (
             <p className="text-error text-sm mt-1">{errors.rating}</p>
+)}
+        </div>
+
+        {/* Name Field */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Your Name *
+          </label>
+          <input
+            type="text"
+            value={userName}
+            onChange={(e) => setUserName(e.target.value)}
+            placeholder="Enter your name"
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors ${
+              errors.userName ? 'border-red-300 bg-red-50' : 'border-gray-300'
+            }`}
+            maxLength="50"
+          />
+          {errors.userName && (
+            <p className="text-red-600 text-sm mt-1">{errors.userName}</p>
           )}
         </div>
 
-        {/* Title */}
+        {/* Title Field */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Review Title (optional)
