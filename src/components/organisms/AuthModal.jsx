@@ -64,8 +64,31 @@ const AuthModal = ({ isOpen, onClose, bookingData = null }) => {
               </p>
             </div>
 
+{/* Sign up/Login Benefits */}
+            <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-lg p-4 mb-6">
+              <h3 className="font-semibold text-gray-900 mb-3">Why create an account?</h3>
+              <div className="space-y-2 text-sm text-gray-700">
+                <div className="flex items-center gap-2">
+                  <ApperIcon name="Check" size={14} className="text-secondary" />
+                  <span>Save your favorite properties</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ApperIcon name="Check" size={14} className="text-secondary" />
+                  <span>Faster booking process</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ApperIcon name="Check" size={14} className="text-secondary" />
+                  <span>Access exclusive member rates</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ApperIcon name="Check" size={14} className="text-secondary" />
+                  <span>Trip management and history</span>
+                </div>
+              </div>
+            </div>
+
             {bookingData && (
-              <div className="bg-white rounded-lg p-4 mb-6">
+              <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
                 <h3 className="font-semibold text-gray-900 mb-2">Your Selection</h3>
                 <p className="text-sm text-gray-600 mb-1">{bookingData.propertyTitle}</p>
                 <p className="text-sm text-gray-600 mb-2">
@@ -167,12 +190,16 @@ const AuthModal = ({ isOpen, onClose, bookingData = null }) => {
                 <span className="text-gray-500 text-sm">Or continue with</span>
               </div>
               <div className="space-y-3">
-                <button className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                  <ApperIcon name="Mail" size={20} className="text-gray-600" />
+<button className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div className="w-5 h-5 bg-gradient-to-r from-red-500 to-yellow-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">G</span>
+                  </div>
                   <span className="font-medium text-gray-700">Continue with Google</span>
                 </button>
                 <button className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                  <ApperIcon name="Facebook" size={20} className="text-gray-600" />
+                  <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">f</span>
+                  </div>
                   <span className="font-medium text-gray-700">Continue with Facebook</span>
                 </button>
               </div>

@@ -48,18 +48,28 @@ const PropertyCard = ({ property, onWishlistToggle }) => {
         />
         
         {/* Wishlist Button */}
-        <button
-          onClick={handleWishlistClick}
-          className={`absolute top-3 right-3 p-2 rounded-full heart-animation ${
-            isWishlisted ? "bg-white/90 text-primary" : "bg-white/70 text-gray-700"
-          } hover:bg-white/90 transition-all`}
-        >
-          <ApperIcon 
-            name={isWishlisted ? "Heart" : "Heart"} 
-            size={16} 
-            className={isWishlisted ? "fill-current" : ""}
-          />
-        </button>
+<div className="relative group">
+          <button
+            onClick={handleWishlistClick}
+            className={`absolute top-3 right-3 p-2 rounded-full heart-animation ${
+              isWishlisted ? "bg-white/90 text-primary" : "bg-white/70 text-gray-700"
+            } hover:bg-white/90 transition-all`}
+          >
+            <ApperIcon 
+              name={isWishlisted ? "Heart" : "Heart"} 
+              size={16} 
+              className={isWishlisted ? "fill-current" : ""}
+            />
+          </button>
+          
+          {/* Login tooltip for guests */}
+          <div className="absolute top-14 right-0 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+            <div className="relative">
+              Log in to save favorites permanently
+              <div className="absolute -top-1 right-4 w-2 h-2 bg-gray-900 rotate-45"></div>
+            </div>
+          </div>
+        </div>
 
         {/* Image Navigation */}
         {property.images.length > 1 && (

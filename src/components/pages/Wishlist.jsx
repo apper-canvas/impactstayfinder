@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import PropertyCard from "@/components/molecules/PropertyCard";
-import Loading from "@/components/ui/Loading";
-import Error from "@/components/ui/Error";
-import Empty from "@/components/ui/Empty";
-import ApperIcon from "@/components/ApperIcon";
+import { toast } from "react-hot-toast";
 import { wishlistService } from "@/services/api/wishlistService";
 import { propertyService } from "@/services/api/propertyService";
+import ApperIcon from "@/components/ApperIcon";
+import Loading from "@/components/ui/Loading";
+import Empty from "@/components/ui/Empty";
+import Error from "@/components/ui/Error";
+import PropertyCard from "@/components/molecules/PropertyCard";
 
 const Wishlist = () => {
   const [wishlistItems, setWishlistItems] = useState([]);
@@ -41,14 +42,20 @@ const Wishlist = () => {
     loadWishlist();
   }, []);
 
-  const handleWishlistToggle = async (propertyId, isAdded) => {
+const handleWishlistToggle = async (propertyId, isAdded) => {
     try {
       if (!isAdded) {
         await wishlistService.removeItem(propertyId);
         setWishlistItems(prev => prev.filter(item => item.Id !== propertyId));
+        toast.success("Removed from favorites");
+      } else {
+        // For guests, show temporary add with tooltip about login
+        setWishlistItems(prev => [...prev, { Id: propertyId }]);
+        toast.info("Added to temporary favorites. Log in to save permanently.");
       }
     } catch (err) {
       console.error("Wishlist error:", err);
+      toast.error("Please log in to manage your favorites");
     }
   };
 

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ApperIcon from "@/components/ApperIcon";
 import Button from "@/components/atoms/Button";
+import Help from "@/components/pages/Help";
 import AuthModal from "@/components/organisms/AuthModal";
 
 const Header = () => {
@@ -36,12 +37,20 @@ const Header = () => {
               >
                 Explore
               </Link>
-              <button
+<button
                 onClick={handleWishlistClick}
-                className="flex items-center gap-2 text-gray-700 hover:text-primary transition-colors font-medium"
+                className="flex items-center gap-2 text-gray-700 hover:text-primary transition-colors font-medium relative group"
               >
                 <ApperIcon name="Heart" size={16} />
                 Saved
+                
+                {/* Guest tooltip */}
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                  <div className="relative">
+                    View your saved properties
+                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
+                  </div>
+                </div>
               </button>
               <Link 
                 to="/help" 
@@ -90,12 +99,20 @@ const Header = () => {
               <ApperIcon name="Search" size={20} />
               <span className="text-xs">Explore</span>
             </Link>
-            <button
+<button
               onClick={handleWishlistClick}
-              className="flex flex-col items-center gap-1 py-2 px-4 text-gray-600 hover:text-primary transition-colors"
+              className="flex flex-col items-center gap-1 py-2 px-4 text-gray-600 hover:text-primary transition-colors relative group"
             >
               <ApperIcon name="Heart" size={20} />
               <span className="text-xs">Saved</span>
+              
+              {/* Mobile tooltip */}
+              <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                <div className="relative">
+                  View saved properties
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
+                </div>
+              </div>
             </button>
             <Link 
               to="/help" 
