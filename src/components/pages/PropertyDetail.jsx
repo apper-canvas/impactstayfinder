@@ -767,7 +767,7 @@ const loadProperty = async () => {
             <HouseRulesSection />
 
             {/* Reviews Section */}
-            <ReviewsSection rating={property.rating} reviewCount={property.reviewCount} />
+<ReviewsSection rating={property.rating} reviewCount={property.reviewCount} propertyId={property.Id} />
           </div>
 
           {/* Booking Panel */}

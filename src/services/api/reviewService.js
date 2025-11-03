@@ -1,4 +1,8 @@
-import { toast } from 'react-toastify';
+import { toast } from "react-toastify";
+import React, { useEffect, useState } from "react";
+import ApperIcon from "@/components/ApperIcon";
+import Button from "@/components/atoms/Button";
+import Error from "@/components/ui/Error";
 
 // Mock review data - in production this would come from a database
 const mockReviews = [
@@ -95,6 +99,7 @@ class ReviewService {
   }
 
   // Get all reviews for a specific property
+// Get all reviews for a specific property
   async getByPropertyId(propertyId, options = {}) {
     await new Promise(resolve => setTimeout(resolve, 200));
     
@@ -124,6 +129,12 @@ class ReviewService {
       totalCount: propertyReviews.length,
       averageRating: this._calculateAverageRating(propertyReviews)
     };
+  }
+
+// Get reviews summary for a property (used in ReviewsSection)
+  async getReviewsSummary(propertyId) {
+    const result = await this.getByPropertyId(propertyId);
+    return result;
   }
 
   // Create a new review
@@ -224,3 +235,359 @@ class ReviewService {
 }
 
 export const reviewService = new ReviewService();
+
+// Review Form Component
+
+function ReviewForm({ propertyId, onSubmit, onCancel, loading }) {
+  const [rating, setRating] = useState(0);
+  const [hoveredRating, setHoveredRating] = useState(0);
+  const [title, setTitle] = useState('');
+  const [comment, setComment] = useState('');
+  const [errors, setErrors] = useState({});
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (rating === 0) {
+      newErrors.rating = 'Please select a rating';
+    }
+    
+    if (comment.trim().length < 10) {
+      newErrors.comment = 'Review must be at least 10 characters long';
+    }
+    
+    if (comment.trim().length > 1000) {
+      newErrors.comment = 'Review must be less than 1000 characters';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    const reviewData = {
+      propertyId: propertyId,
+      rating: rating,
+      title: title.trim(),
+      comment: comment.trim(),
+      userId: 'current-user', // In real app, get from auth
+      userName: 'Current User', // In real app, get from auth
+      userAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face'
+    };
+
+    await onSubmit(reviewData);
+  };
+
+  const handleRatingClick = (value) => {
+    setRating(value);
+    if (errors.rating) {
+      setErrors(prev => ({ ...prev, rating: '' }));
+    }
+  };
+
+  const handleCommentChange = (e) => {
+    setComment(e.target.value);
+    if (errors.comment) {
+      setErrors(prev => ({ ...prev, comment: '' }));
+    }
+  };
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-card p-6 mt-4">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Add Your Review</h3>
+      
+      <form onSubmit={handleSubmit}>
+        {/* Rating */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Rating *
+          </label>
+          <div className="flex gap-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                type="button"
+                className="p-1 transition-colors"
+                onMouseEnter={() => setHoveredRating(star)}
+                onMouseLeave={() => setHoveredRating(0)}
+                onClick={() => handleRatingClick(star)}
+              >
+                <ApperIcon
+                  name="Star"
+                  size={24}
+                  className={`${
+                    star <= (hoveredRating || rating)
+                      ? 'text-accent fill-current'
+                      : 'text-gray-300'
+                  } transition-colors`}
+                />
+              </button>
+            ))}
+          </div>
+          {errors.rating && (
+            <p className="text-error text-sm mt-1">{errors.rating}</p>
+          )}
+        </div>
+
+        {/* Title */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Review Title (optional)
+          </label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Give your review a title"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors"
+            maxLength="100"
+          />
+        </div>
+
+        {/* Comment */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Review Comment *
+          </label>
+          <textarea
+            value={comment}
+            onChange={handleCommentChange}
+            placeholder="Share your experience with this property..."
+            rows="4"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors resize-none"
+            maxLength="1000"
+          />
+          <div className="flex justify-between items-center mt-1">
+            <div>
+              {errors.comment && (
+                <p className="text-error text-sm">{errors.comment}</p>
+              )}
+            </div>
+            <span className="text-sm text-gray-500">
+              {comment.length}/1000
+            </span>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3 pt-4">
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={loading}
+            className="flex-1"
+          >
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <ApperIcon name="Loader2" size={16} className="animate-spin" />
+                Submitting...
+              </div>
+            ) : (
+              'Submit Review'
+            )}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={loading}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+// Enhanced Reviews Section Component
+function ReviewsSection({ rating, reviewCount, propertyId }) {
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showAddReview, setShowAddReview] = useState(false);
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  const loadReviews = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const reviewData = await reviewService.getReviewsSummary(propertyId);
+      setReviews(reviewData.reviews);
+    } catch (err) {
+      setError('Failed to load reviews');
+      toast.error('Failed to load reviews');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmitReview = async (reviewData) => {
+    try {
+      setSubmittingReview(true);
+      await reviewService.create(reviewData);
+      toast.success('Review submitted successfully!');
+      setShowAddReview(false);
+      await loadReviews(); // Refresh reviews
+    } catch (err) {
+      toast.error(err.message || 'Failed to submit review');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (propertyId) {
+      loadReviews();
+    }
+  }, [propertyId]);
+
+  if (loading) {
+    return (
+      <div className="mt-12">
+        <div className="flex items-center justify-center py-12">
+          <ApperIcon name="Loader2" size={32} className="animate-spin text-gray-400" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mt-12">
+        <div className="text-center py-12">
+          <ApperIcon name="AlertCircle" size={48} className="text-error mx-auto mb-4" />
+          <p className="text-error">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-12">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-semibold text-gray-900">
+            Reviews ({reviewCount || reviews.length})
+          </h2>
+          {rating && (
+            <div className="flex items-center gap-2 mt-1">
+              <div className="flex">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <ApperIcon
+                    key={star}
+                    name="Star"
+                    size={16}
+                    className={`${
+                      star <= Math.round(rating) 
+                        ? 'text-accent fill-current' 
+                        : 'text-gray-300'
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-sm text-gray-600">{rating} average</span>
+            </div>
+          )}
+        </div>
+        
+        <Button
+          variant="outline"
+          onClick={() => setShowAddReview(!showAddReview)}
+          className="flex items-center gap-2"
+        >
+          <ApperIcon name="Plus" size={16} />
+          Add Review
+        </Button>
+      </div>
+
+      {showAddReview && (
+        <ReviewForm
+          propertyId={propertyId}
+          onSubmit={handleSubmitReview}
+          onCancel={() => setShowAddReview(false)}
+          loading={submittingReview}
+        />
+      )}
+
+      {reviews.length === 0 ? (
+        <div className="text-center py-12 bg-gray-50 rounded-card">
+          <ApperIcon name="MessageCircle" size={48} className="text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600">No reviews yet. Be the first to review this property!</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {reviews.map((review) => (
+            <div key={review.Id} className="border-b border-gray-200 pb-6 last:border-b-0">
+              <div className="flex items-start gap-4">
+                <img
+                  src={review.userAvatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face'}
+                  alt={review.userName}
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-gray-900">{review.userName}</h4>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="flex">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <ApperIcon
+                              key={star}
+                              name="Star"
+                              size={14}
+                              className={`${
+                                star <= review.rating 
+                                  ? 'text-accent fill-current' 
+                                  : 'text-gray-300'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-sm text-gray-600">
+                          {new Date(review.date).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </span>
+                        {review.verified && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-success/10 text-success text-xs rounded-full">
+                            <ApperIcon name="CheckCircle" size={12} />
+                            Verified
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {review.title && (
+                    <h5 className="font-medium text-gray-900 mt-3">{review.title}</h5>
+                  )}
+                  
+                  <p className="text-gray-700 mt-2 leading-relaxed">{review.comment}</p>
+                  
+                  <div className="flex items-center gap-4 mt-4">
+                    <button className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                      <ApperIcon name="ThumbsUp" size={14} />
+                      <span>Helpful ({review.helpful})</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export { ReviewForm, ReviewsSection };
