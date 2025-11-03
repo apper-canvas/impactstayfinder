@@ -18,7 +18,7 @@ async getById(id) {
 
     // Get review data for this property
     try {
-      const { reviewService } = await import('./reviewService.js');
+const { reviewService } = await import('@/services/api/reviewService');
       const reviewData = await reviewService.getByPropertyId(id);
       
       return {
