@@ -276,8 +276,8 @@ function ReviewForm({ propertyId, onSubmit, onCancel, loading }) {
       rating: rating,
       title: title.trim(),
       comment: comment.trim(),
-      userId: 'current-user', // In real app, get from auth
-      userName: 'Current User', // In real app, get from auth
+userId: 'current-user', // In real app, get from auth
+      userName: '', // Empty by default - user must enter name
       userAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face'
     };
 
